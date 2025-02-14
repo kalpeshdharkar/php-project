@@ -1,41 +1,40 @@
 pipeline {
     agent any
-    stages{
-        stage('git cloned'){
-            steps{
-                git url:'https://github.com/kalpeshdharkar/php-project/', branch: "master"
-              
+    stages {
+        stage('Git Clone') {
+            steps {
+                git url: 'https://github.com/kalpeshdharkar/php-project/', branch: "master"
             }
         }
-        stage('Build docker image'){
-            steps{
-                script{
-                    sh 'docker build -t kalpeshdharkar/2febimg:v1:v1 .'
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t kalpeshdharkar/2febimg:v1 .'  // Fixed the tag format
                     sh 'docker images'
                 }
             }
         }
-          stage('Docker login') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-pwd', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-            sh "echo 'Logging in as $USER'"
-            sh "echo $PASS | docker login -u $USER --password-stdin"
-            sh 'docker push kalpeshdharkar/2febimg:v1:v1'
-        }
-    }
-}
 
-        
-     stage('Deploy') {
+        stage('Docker Login') {
             steps {
-               script {
-                   def dockerrm = 'sudo docker rm -f My-first-containe2211 || true'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-pwd', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                    sh "echo 'Logging in as $USER'"
+                    sh "echo $PASS | docker login -u $USER --password-stdin"
+                    sh 'docker push kalpeshdharkar/2febimg:v1'  // Fixed the tag format
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    def dockerrm = 'sudo docker rm -f My-first-containe2211 || true'
                     def dockerCmd = 'sudo docker run -itd --name My-first-containe2211 -p 8083:80 kalpeshdharkar/2febimg:v1'
+                    
                     sshagent(['sshkeypair']) {
-                        //chnage the private ip in below code
-                        // sh "docker run -itd --name My-first-containe2111 -p 8083:80 kalpeshdharkar/2febimg:v1"
-                         sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.25.139 ${dockerrm}"
-                         sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.25.139 ${dockerCmd}"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.25.139 ${dockerrm}"
+                        sh "ssh -o StrictHostKeyChecking=no ubuntu@172.31.25.139 ${dockerCmd}"
                     }
                 }
             }
